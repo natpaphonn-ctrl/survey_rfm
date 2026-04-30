@@ -210,6 +210,36 @@ Chart.register(prizeLabelPlugin);
 const segmentChartRegistry = {};
 const segmentFilterState = {};
 
+
+function updateCustomerStats(idx, ci, c, fromIdx, toIdx) {
+  let totalSpend = 0, totalPrize = 0, buyCount = 0;
+  for (let i = fromIdx; i <= toIdx; i++) {
+    const sp = c.spending[i] || 0;
+    const pr = c.prize[i] || 0;
+    totalSpend += sp;
+    totalPrize += pr;
+    if (sp > 0) buyCount++;
+  }
+  const periodCount = toIdx - fromIdx + 1;
+  const netPL = totalPrize - totalSpend;
+  const netColor = netPL >= 0 ? '#16A34A' : '#DC2626';
+  const fmt = (n) => Math.round(n).toLocaleString('en-US');
+  
+  const tsEl = document.getElementById('ts-' + idx + '-' + ci);
+  const tpEl = document.getElementById('tp-' + idx + '-' + ci);
+  const npEl = document.getElementById('np-' + idx + '-' + ci);
+  const pcEl = document.getElementById('pc-' + idx + '-' + ci);
+  const bcEl = document.getElementById('bc-' + idx + '-' + ci);
+  if (tsEl) tsEl.textContent = fmt(totalSpend) + ' บ.';
+  if (tpEl) tpEl.textContent = fmt(totalPrize) + ' บ.';
+  if (npEl) {
+    npEl.textContent = (netPL >= 0 ? '+' : '') + fmt(netPL) + ' บ.';
+    npEl.style.color = netColor;
+  }
+  if (pcEl) pcEl.textContent = periodCount + ' งวด';
+  if (bcEl) bcEl.textContent = buyCount + '/' + periodCount + ' งวด';
+}
+
 function updateSegmentCharts(segIdx) {
   const reg = segmentChartRegistry[segIdx] || [];
   const state = segmentFilterState[segIdx] || {from: 0, to: 31};
@@ -241,6 +271,9 @@ function updateSegmentCharts(segIdx) {
     // Update prize plugin filter offset
     chart.options.plugins.prizeLabel.filterFrom = fromIdx;
     chart.update('none');
+    
+    // Update displayed stats per customer
+    updateCustomerStats(segIdx, item.ci, c, fromIdx, toIdx);
   });
 }
 
@@ -354,9 +387,10 @@ DATA.segments.forEach((s, idx) => {
           </div>
         </div>
         <div style="text-align:right;font-size:12px;line-height:1.6">
-          <div>ซื้อรวม: <b style="color:#111827">${fmtN(c.total_spend)} บ.</b> </div>
-          <div>รางวัลรวม: <b style="color:#16A34A">${fmtN(c.total_prize)} บ.</b></div>
-          <div>Net: <b style="color:${netColor}">${netPL >= 0 ? '+' : ''}${fmtN(netPL)} บ.</b></div>
+          <div>ซื้อรวม: <b id="ts-${idx}-${ci}" style="color:#111827">—</b> </div>
+          <div>รางวัลรวม: <b id="tp-${idx}-${ci}" style="color:#16A34A">—</b></div>
+          <div>Net: <b id="np-${idx}-${ci}">—</b></div>
+          <div style="color:#6B7280;margin-top:3px;font-size:11px">แสดง <b id="pc-${idx}-${ci}" style="color:#111827">—</b> · ซื้อ <b id="bc-${idx}-${ci}" style="color:#111827">—</b></div>
         </div>
       </div>
       <div style="position:relative;height:140px"><canvas id="cb-${idx}-${ci}"></canvas></div>
@@ -436,6 +470,8 @@ DATA.segments.forEach((s, idx) => {
           }
         }
       });
+      // Initial stats — full range, will be overridden by updateSegmentCharts when filter applies
+      updateCustomerStats(idx, ci, c, 0, c.spending.length - 1);
     }, 50);
   });
   
