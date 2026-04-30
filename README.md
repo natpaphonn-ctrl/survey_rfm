@@ -4,4 +4,4 @@ Lottery Plus - Survey RFM Dashboard
 
 ## Dashboard
 
-https://natpaphonnn.github.io/survey_rfm/Survey_RFM_Dashboard.html
+https://natpaphonn-ctrl.github.io/survey_rfm/Survey_RFM_Dashboard.html
